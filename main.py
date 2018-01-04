@@ -73,7 +73,7 @@ s = (None, 784, 16, 10)
 K = 10
 
 # Training sets
-m = 20
+m = 1000
 # Features
 n = 784
 # Regularisation parameter
