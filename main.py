@@ -163,17 +163,19 @@ def J():
 	p_sum = 0
 
 	# Add regularisation cost of theta1 parameters
-	'''for i in T1:
-		for t in i:
+	for i in T1:
+		# Slice to exclude bias unit
+		for t in i[:-1]:
 			p_sum += t**2
 			
 
-	# Add regularisation cost of theta2 parameters
+	# Add regularisation cost of theta2 parameters 
 	for i in T2:
-		for t in i:
-			p_sum += t**2'''
+		# Slice to exclude bias unit
+		for t in i[:-1]:
+			p_sum += t**2
 
-	return (h_sum/m)# + l*p_sum/(2*m) 
+	return (h_sum/m) + l*p_sum/(2*m) 
 
 
 def gradient_check(D):
@@ -259,13 +261,12 @@ def iterate(verbose=False):
 	# Set parameters involving bias unit = 0
 	bias_unit_discriminator.T[-1] = np.zeros(s[2])
 	# Average derivatives and regularise
-	D1 = d1 / m + l * T1 * bias_unit_discriminator
+	D1 = d1/m + l*T1*bias_unit_discriminator/(2*m)
 
 	# Ditto
 	bias_unit_discriminator = np.ones_like(T2)
 	bias_unit_discriminator.T[-1] = np.zeros(s[3])
-	D2 = d2 / m #+ l * T2 * bias_unit_discriminator
-
+	D2 = d2/m + l*T2*bias_unit_discriminator/(2*m)
 
 	print "Parameter derivative\t", D1[7][13]
 
