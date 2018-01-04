@@ -72,7 +72,7 @@ s = (None, 784, 16, 10)
 K = 10
 
 # Training sets
-m = 20
+m = 1000
 # Features
 n = 784
 # Regularisation parameter
@@ -129,7 +129,6 @@ def errors(t,a):
 
 	# Layer 2 errors
 	e2 = np.dot(T2.T, e3) * (a[2] * (1 - a[2]))
-	#print(e2)
 
 	# None is added to make indices more logical
 	return (None, None, e2, e3)
@@ -159,7 +158,7 @@ def J():
 	p_sum = 0
 
 	# Add regularisation cost of theta1 parameters
-	'''for i in T1:
+	for i in T1:
 		for t in i:
 			p_sum += t**2
 			
@@ -167,9 +166,9 @@ def J():
 	# Add regularisation cost of theta2 parameters
 	for i in T2:
 		for t in i:
-			p_sum += t**2'''
+			p_sum += t**2
 
-	return (h_sum/m)# + l*p_sum/(2*m) 
+	return (h_sum/m) + l*p_sum/(2*m) 
 
 
 def gradient_check(D):
@@ -213,8 +212,6 @@ def iterate(verbose=False):
 
 	global T1,T2
 
-	print "Parameters to unit \n", T2[7]
-
 	# Accumulator for parameter derivatives
 	d1 = np.zeros_like(T1)
 	d2 = np.zeros_like(T2)
@@ -241,11 +238,6 @@ def iterate(verbose=False):
 		d2 += np.dot(E3, a2)
 
 
-		if i == 3:
-			print "Destination unit value\t", a[3][7]
-			print "Origin unit value\t", a[2][13]
-
-
 
 	# Uses matrix operations to exclude bias unit from being regularised
 	# Creates a matrix of ones corresponding to parameters
@@ -258,10 +250,9 @@ def iterate(verbose=False):
 	# Ditto
 	bias_unit_discriminator = np.ones_like(T2)
 	bias_unit_discriminator.T[-1] = np.zeros(s[3])
-	D2 = d2 / m #+ l * T2 * bias_unit_discriminator
+	D2 = d2 / m + l * T2 * bias_unit_discriminator
 
 
-	print "Parameter derivative\t", D1[7][13]
 
 
 	# Update parameters
@@ -275,10 +266,6 @@ def iterate(verbose=False):
 
 
 def run():
-	#while input() != "p"
-	#iterate()
-	#print "ONE ITERATION LATER..."
-	#iterate()
 	D = iterate()
 	gradient_check(D)
 
