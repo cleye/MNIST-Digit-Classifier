@@ -80,6 +80,9 @@ n = 784
 l = 1
 # Learning rate
 A = 0.001
+# Number of iterations
+iteration = 0
+
 
 # Theta values initialised as random in bound [-10, 10]
 T1 = np.random.random((s[2], s[1]+1)) * 1.0 - 0.5
@@ -212,8 +215,9 @@ def iterate(verbose=False):
 		Performs backpropagation to calculate parameter derivatives for one iteration
 		Returns array of parameter derivatives for the iteration '''
 
-	global T1,T2
+	global T1,T2, iteration
 
+	print "FOR ITERATION {} and unit 7 in layer 3 (outpu layer)".format(iteration+1)
 	print "Parameters to unit \n", T2[7]
 
 	# Accumulator for parameter derivatives
@@ -243,8 +247,9 @@ def iterate(verbose=False):
 
 
 		if i == 3:
-			print "Destination unit value\t", a[3][7]
-			print "Origin unit value\t", a[2][13]
+			print "FOR TRAINING SET 3"
+			print "Values to unit \n", a[2]
+			print "Unit value\t", a[3][7]
 
 
 
@@ -270,6 +275,8 @@ def iterate(verbose=False):
 	T2 -= A * D2
 
 	#print "Cost is: " , J()
+
+	iteration += 1
 
 	return D2
 
