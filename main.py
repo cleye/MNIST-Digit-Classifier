@@ -67,18 +67,21 @@ class TrainingSet:
 # Number of layers
 L = 3
 # Units in each layer
-s = (None, 784, 16, 10)
+s = (None, 784, 25, 10)
 # Number of output layers (None is added to make indices more logical)
 K = 10
 
 # Training sets
-m = 1000
+m = 5000
 # Features
 n = 784
 # Regularisation parameter
 l = 1
 # Learning rate
-A = 0.001
+A = 0.05
+# Number of iterations
+iteration = 0
+
 
 # Theta values initialised as random in bound [-10, 10]
 T1 = np.random.random((s[2], s[1]+1)) * 1.0 - 0.5
@@ -159,13 +162,15 @@ def J():
 
 	# Add regularisation cost of theta1 parameters
 	for i in T1:
-		for t in i:
+		# Slice to exclude bias unit
+		for t in i[:-1]:
 			p_sum += t**2
 			
 
-	# Add regularisation cost of theta2 parameters
+	# Add regularisation cost of theta2 parameters 
 	for i in T2:
-		for t in i:
+		# Slice to exclude bias unit
+		for t in i[:-1]:
 			p_sum += t**2
 
 	return (h_sum/m) + l*p_sum/(2*m) 
@@ -174,6 +179,8 @@ def J():
 def gradient_check(D):
 	''' Print approximated values for parameter derivatives of T2
 		and compare with calculated derivatives '''
+
+	# D = iteration()
 
 	# Amount of gradients to check
 	gradients_amount = 5
@@ -210,7 +217,7 @@ def iterate(verbose=False):
 		Performs backpropagation to calculate parameter derivatives for one iteration
 		Returns array of parameter derivatives for the iteration '''
 
-	global T1,T2
+	global T1,T2, iteration
 
 	# Accumulator for parameter derivatives
 	d1 = np.zeros_like(T1)
@@ -245,12 +252,12 @@ def iterate(verbose=False):
 	# Set parameters involving bias unit = 0
 	bias_unit_discriminator.T[-1] = np.zeros(s[2])
 	# Average derivatives and regularise
-	D1 = d1 / m + l * T1 * bias_unit_discriminator
+	D1 = d1/m + l*T1*bias_unit_discriminator/(2*m)
 
 	# Ditto
 	bias_unit_discriminator = np.ones_like(T2)
 	bias_unit_discriminator.T[-1] = np.zeros(s[3])
-	D2 = d2 / m + l * T2 * bias_unit_discriminator
+	D2 = d2/m + l*T2*bias_unit_discriminator/(2*m)
 
 
 
@@ -259,18 +266,31 @@ def iterate(verbose=False):
 	T1 -= A * D1
 	T2 -= A * D2
 
-	#print "Cost is: " , J()
+
+
+	iteration += 1
 
 	return D2
 
 
+def status():
+	#print "-"*16
+	print "ITERATION #{} : {}".format(iteration,J())
+	#print "Cost: \t", J()
+	#print ""
+	#print "-"*16
+
+np.set_printoptions(threshold=1000000,suppress=True)
 
 def run():
-	D = iterate()
-	gradient_check(D)
+	for i in range(50):
+		status()
+		iterate()
+	print T1
+	print T2
+
 
 run()
-
 
 
 '''
