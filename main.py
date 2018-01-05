@@ -32,16 +32,16 @@ class TrainingSet:
 			# Position cursor at training set
 			labels.seek(self.index)
 			# Read 1 byte and convert to int
-			self.label = int(labels.read(1).encode("hex"), 16)
+			self.label = int.from_bytes(labels.read(1), byteorder="big")
 
 		# Set expected output from neural net
 		self.y = np.zeros(10)
 		self.y[self.label] = 1
 
-
+		# improve this
 		with open(self.IMAGES, "rb") as images:
 			# Position cursor at training set
-			images.seek(n * 784)
+			images.seek(self.index * 784)
 			# 1D array of pixels
 			image_1d = []
 			# 2D array of pixels
@@ -53,7 +53,7 @@ class TrainingSet:
 				column = []
 				for i in range(28):
 					# Read 1 byte and convert to int
-					pixel = int(images.read(1).encode("hex"), 16)
+					pixel = int.from_bytes(images.read(1), byteorder="big")
 					column.append(pixel)
 					image_1d.append(pixel)
 				image_2d.append(column)
@@ -72,7 +72,7 @@ s = (None, 784, 25, 10)
 K = 10
 
 # Training sets
-m = 5000
+m = 1000
 # Features
 n = 784
 # Regularisation parameter
@@ -84,8 +84,8 @@ iteration = 0
 
 
 # Theta values initialised as random in bound [-10, 10]
-T1 = np.random.random((s[2], s[1]+1)) * 1.0 - 0.5
-T2 = np.random.random((s[3], s[2]+1)) * 1.0 - 0.5
+T1 = np.random.random((s[2], s[1]+1)) * 0.2 - 0.1
+T2 = np.random.random((s[3], s[2]+1)) * 0.2 - 0.1
 
 
 def g(z):
@@ -102,16 +102,16 @@ def activiation_units(t):
 	''' Return array of each layer's activation units for training set '''
 
 	# LAYER 1 (input layer)						# Example output layer representation
-	# Add bias unit to training set input			# [ 0.2134 ] 1
-	x = np.insert(t.x, 0, 1)						# [ 0.6345 ] 2
-													# [ 0.2224 ] 3
-	# LAYER 2 (hidden layer)						# [ 0.2064 ] 4
-	# Sum up parameters with dot product			# [ 0.9554 ] 5
-	z = np.dot(T1, x)								# [ 0.1124 ] 6
-	# Activation units for layer 2					# [ 0.0067 ] 7
-	a2 = g(z)										# [ 0.1264 ] 8
-	# Add bias units 								# [ 0.7734 ] 9
-	a2 = np.insert(a2, 0, 1)						# [ 0.5561 ] 10
+	# Add bias unit to training set input			# 1  [ 0.2134 ] 
+	x = np.insert(t.x, 0, 1)						# 2  [ 0.6345 ] 
+													# 3  [ 0.2224 ] 
+	# LAYER 2 (hidden layer)						# 4  [ 0.2064 ] 
+	# Sum up parameters with dot product			# 5  [ 0.9554 ] 
+	z = np.dot(T1, x)								# 6  [ 0.1124 ] 
+	# Activation units for layer 2					# 7  [ 0.0067 ] 
+	a2 = g(z)										# 8  [ 0.1264 ] 
+	# Add bias units 								# 9  [ 0.7734 ] 
+	a2 = np.insert(a2, 0, 1)						# 10 [ 0.5561 ] 
 
 	# LAYER 3 (output layer)
 	# Sum up parameters with dot product
@@ -179,8 +179,6 @@ def J():
 def gradient_check(D):
 	''' Print approximated values for parameter derivatives of T2
 		and compare with calculated derivatives '''
-
-	# D = iteration()
 
 	# Amount of gradients to check
 	gradients_amount = 5
@@ -260,13 +258,9 @@ def iterate(verbose=False):
 	D2 = d2/m + l*T2*bias_unit_discriminator/(2*m)
 
 
-
-
 	# Update parameters
 	T1 -= A * D1
 	T2 -= A * D2
-
-
 
 	iteration += 1
 
@@ -283,11 +277,10 @@ def status():
 np.set_printoptions(threshold=1000000,suppress=True)
 
 def run():
-	for i in range(50):
-		status()
-		iterate()
-	print T1
-	print T2
+	iterate()
+	status()
+	D = iterate()
+	gradient_check(D)
 
 
 run()
