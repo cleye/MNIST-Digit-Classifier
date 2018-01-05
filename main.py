@@ -21,8 +21,9 @@ class TrainingSet:
 	'''
 
 	def __init__(self, index_):
+		pass
 		''' Inits TrainingSet by reading training set data '''
-
+		'''
 		self.LABELS = "/Users/cleye.jensen/Downloads/labels"
 		self.IMAGES = "/Users/cleye.jensen/Downloads/images"
 
@@ -43,23 +44,21 @@ class TrainingSet:
 			# Position cursor at training set
 			images.seek(self.index * 784)
 			# 1D array of pixels
-			image_1d = []
-			# 2D array of pixels
-			image_2d = []
+			image = []
 
 			# Loop through rows and columns of image pixels
 			for i in range(28):
-				# Stores pixels in column
-				column = []
 				for i in range(28):
 					# Read 1 byte and convert to int
-					pixel = int.from_bytes(images.read(1), byteorder="big")
-					column.append(pixel)
-					image_1d.append(pixel)
-				image_2d.append(column)
+					pixel = 1#int.from_bytes(images.read(1), byteorder="big")
+					image.append(pixel)
 
-		self.x = np.array(image_1d)/255.
-		self.image_2d = np.array(image_2d)/255.
+		self.x = np.array(image)/255.
+
+	def display():'''
+		''' Displays the training set image '''
+		#plt.matshow(img)
+		#plt.show()
 
 
 
@@ -283,7 +282,12 @@ def run():
 	gradient_check(D)
 
 
-run()
+labels = np.fromfile("/Users/cleye.jensen/Downloads/labels", dtype=np.uint8)
+images = np.reshape(np.fromfile("/Users/cleye.jensen/Downloads/images", dtype=np.uint8, count=m*784), (m, 28, 28))
+
+
+
+
 
 
 '''
