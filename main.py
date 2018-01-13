@@ -22,8 +22,9 @@ s = (None, 784, 25, 10)
 # Number of output layers (None is added to make indices more logical)
 K = 10
 
-# Training sets
+# Number of training sets
 m = 5000
+m_test = 100
 # Features
 n = 784
 # Regularisation parameter
@@ -39,17 +40,36 @@ T1 = np.random.random((s[2], s[1]+1)) * 0.2 - 0.1
 T2 = np.random.random((s[3], s[2]+1)) * 2 - 1
 
 
-# Set X and Y values
-Y = np.zeros((m,K))
-# Temporary counter
-i = 0
-for y in np.fromfile(LABELS_FILE, dtype=np.uint8, count=m):
-	Y[i][y] = 1
-	i+=1
-del i
-X = np.reshape(np.fromfile(IMAGES_FILE, dtype=np.uint8, count=m*784), (m, 28, 28))/255.
 
+def get_data(images_file, labels_file, training_sets):
+	''' Get data from MNIST handwritten digit images and labels 
+	Parameters:
+		training_sets: How many training sets to retrieve
+	'''
 
+	# Initialise y values as all zeros
+	y = np.zeros((training_sets,K))
+
+	with open(labels_file, "rb") as labels:
+		# Skip the first data bytes
+		labels.seek(8)
+		# Counter denoting training set
+		i = 0
+		for l in np.fromfile(labels, dtype=np.uint8, count=training_sets):
+			# Set y array to 1 for corresponding label
+			y[i][l] = 1
+			i += 1
+
+	with open(images_file, "rb") as images:
+		# Skip the first data bytes
+		images.seek(12)
+		# Get pixels and reshape into array
+		x = np.reshape(np.fromfile(images, dtype=np.uint8, count=training_sets*784), (training_sets, 28, 28))/255.
+	
+	return x,y
+
+X,Y = get_data(IMAGES_FILE, LABELS_FILE, m)
+X_test, Y_test = get_data(TEST_IMAGES_FILE, TEST_LABELS_FILE, m_test)
 
 def g(z):
 	''' Sigmoid function '''
@@ -64,17 +84,21 @@ def h(t):
 def activation_units(t):
 	''' Return array of each layer's activation units for training set '''
 
-	# LAYER 1 (input layer)						# Example output layer representation
-	# Add bias unit to training set input			# 1  [ 0.2134 ] 
-	x = np.insert(X[t], 0, 1)						# 2  [ 0.6345 ] 
-													# 3  [ 0.2224 ] 
-	# LAYER 2 (hidden layer)						# 4  [ 0.2064 ] 
-	# Sum up parameters with dot product			# 5  [ 0.9554 ] 
-	z = np.dot(T1, x)								# 6  [ 0.1124 ] 
-	# Activation units for layer 2					# 7  [ 0.0067 ] 
-	a2 = g(z)										# 8  [ 0.1264 ] 
-	# Add bias units 								# 9  [ 0.7734 ] 
-	a2 = np.insert(a2, 0, 1)						# 10 [ 0.5561 ] 
+	# LAYER 1 (input layer)		
+	# Add bias unit to training set input
+	if t >= 0:
+		x = np.insert(X[t], 0, 1)
+	else:
+		# Negative t indicates test training set
+		x = np.insert(X_test[t], 0, 1)
+										
+	# LAYER 2 (hidden layer)			
+	# Sum up parameters with dot product
+	z = np.dot(T1, x)					
+	# Activation units for layer 2		
+	a2 = g(z)							
+	# Add bias units 					
+	a2 = np.insert(a2, 0, 1)			
 
 	# LAYER 3 (output layer)
 	# Sum up parameters with dot product
@@ -244,9 +268,14 @@ def status(percentage_correct=False, fancy=False):
 		print "ITERATION #{} : {}".format(iteration,J())
 
 	if percentage_correct:
-		# Test random hypotheses
-		for i in range(10):
-			print "Hypothesis: ", np.argmax(h(i)), "\tActual:", np.argmax(Y[i])
+		test_amount = 100
+		correct = 0
+		# Test if hypotheses is same as actual value
+		for i in range(test_amount):
+			if np.argmax(h(~i)) == np.argmax(Y_test[i]):
+				correct += 1
+
+		print correct, "/100 ({}%) correct".format(100*correct/test_amount)
 
 
 
@@ -260,7 +289,7 @@ def run():
 		iterate()
 		status(percentage_correct=True, fancy=True)
 
-run()
+#run()
 
 
 '''
@@ -317,6 +346,19 @@ T2 - Parameters going from 25-unit Layer 2 to the 10-unit Layer 3  ( 10 x 26 arr
  n     10 │   0   0   X   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   │
           └ 	 																									  ┘
                   X = T2[10][3] 
+
+
+# Example output layer representation
+# 1  [ 0.2134 ] 
+# 2  [ 0.6345 ] 
+# 3  [ 0.2224 ] 
+# 4  [ 0.2064 ] 
+# 5  [ 0.9554 ] 
+# 6  [ 0.1124 ] 
+# 7  [ 0.0067 ] 
+# 8  [ 0.1264 ] 
+# 9  [ 0.7734 ] 
+# 10 [ 0.5561 ] 
 
 
 '''
