@@ -24,7 +24,7 @@ K = 10
 
 # Number of training sets
 m = 5000
-m_test = 100
+m_test = 1000
 # Features
 n = 784
 # Regularisation parameter
@@ -68,7 +68,7 @@ def get_data(images_file, labels_file, training_sets):
 	
 	return x,y
 
-X,Y = get_data(IMAGES_FILE, LABELS_FILE, m)
+X, Y = get_data(IMAGES_FILE, LABELS_FILE, m)
 X_test, Y_test = get_data(TEST_IMAGES_FILE, TEST_LABELS_FILE, m_test)
 
 def g(z):
@@ -90,7 +90,7 @@ def activation_units(t):
 		x = np.insert(X[t], 0, 1)
 	else:
 		# Negative t indicates test training set
-		x = np.insert(X_test[t], 0, 1)
+		x = np.insert(X_test[~t], 0, 1)
 										
 	# LAYER 2 (hidden layer)			
 	# Sum up parameters with dot product
@@ -268,28 +268,26 @@ def status(percentage_correct=False, fancy=False):
 		print "ITERATION #{} : {}".format(iteration,J())
 
 	if percentage_correct:
-		test_amount = 100
 		correct = 0
 		# Test if hypotheses is same as actual value
-		for i in range(test_amount):
+		for i in range(m_test):
 			if np.argmax(h(~i)) == np.argmax(Y_test[i]):
 				correct += 1
 
-		print correct, "/100 ({}%) correct".format(100*correct/test_amount)
+		print correct, "/100 ({}%) correct".format(100*correct/m_test)
 
 
+def display_guess(t):
+	''' Display the digit and neural network tries to guess it '''
 
-np.set_printoptions(threshold=1000000,suppress=True)
+	# Creates 2d array from pixels 
+	x2d = np.reshape(X_test[t], (28,28))
 
-def run():
-	for i in range(6):
-		for i in range(49):
-			iterate()
-			status()
-		iterate()
-		status(percentage_correct=True, fancy=True)
+	plt.matshow(x2d)
+	plt.suptitle(np.argmax(h(~t)))
+	plt.show()
 
-#run()
+
 
 
 '''
@@ -299,13 +297,28 @@ plt.show()
 
 Problems:
 	overflow error in g(z)
-	second layer units are 1s or 0s
 	J() potential overflow error
+	store hypotheses in variable
+
+How it should work:
+
+Welcome to neural network blah blah
+
+N = NeuralNetwork()
+N.train( examples=5000, learning_rate=0.01, regularisation_param=0.5, until_cost=1.23, until_difference=0.001, until_iteration=1000 status="normal" )
+N.test( examples=1000,  )
+N.save()
+
+NeuralNetwork:
+	learning_rate:
+	regularisation_parameter:
+	train():
+
 
 '''
 
 '''      
-      INPUT LAYER (1)         HIDDEN LAYER (2)        OUTPUT LAYER (3)
+      INPUT LAYER (1)          HIDDEN LAYER (2)        OUTPUT LAYER (3)
 
          /   ◯ (bias)               
         |    ◯                       /   ◯ (bias)
