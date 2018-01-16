@@ -25,6 +25,7 @@ def get_data(images_file, labels_file, training_sets):
 
 	# Initialise y values as all zeros
 	y = np.zeros((training_sets, 10))
+	label = np.zeros(training_sets)
 
 	with open(labels_file, "rb") as labels:
 		# Skip the first data bytes
@@ -34,20 +35,22 @@ def get_data(images_file, labels_file, training_sets):
 		for l in np.fromfile(labels, dtype=np.uint8, count=training_sets):
 			# Set y array to 1 for corresponding label
 			y[i][l] = 1
+			label[i] = l
 			i += 1
 
 	with open(images_file, "rb") as images:
 		# Skip the first data bytes
 		images.seek(12)
 		# Get pixels and reshape into array
-		x = np.reshape(np.fromfile(images, dtype=np.uint8, count=training_sets*784), (training_sets, 28, 28))/255.
+		x = np.reshape(np.fromfile(images, dtype=np.uint8, count=training_sets*784), (training_sets, 784))/255.
 	
-	return x,y
+	return x, y, label
+
 
 
 class NeuralNetwork:
 
-	def __init__(self):
+	def __init__(self, examples=5000, learning_rate=0.2, regularisation_parameter=4):
 
 		# Number of layers
 		self.L = 3
@@ -56,19 +59,12 @@ class NeuralNetwork:
 		# Number of output layers 
 		self.K = 10
 
-
-
-
-
-
-	def train(self, examples=5000, learning_rate=0.01, regularisation_param=0.5, until_cost=1.23, until_difference=0.001, until_iteration=1000, status="normal"):
-
 		# Number of training sets
 		self.m = examples
 		# Features
 		self.n = 784
 		# Regularisation parameter
-		self.l = regularisation_param
+		self.l = regularisation_parameter
 		# Learning rate
 		self.A = learning_rate
 		# Number of iterations
@@ -79,14 +75,44 @@ class NeuralNetwork:
 		self.T2 = np.random.random((self.s[3], self.s[2]+1)) * 2 - 1
 
 		# Images and labels from MNIST dataset put into X and Y variables
-		self.X, self.Y = get_data(IMAGES_FILE, LABELS_FILE, self.m)
+		self.X, self.Y, self.labels = get_data(IMAGES_FILE, LABELS_FILE, self.m)
 
 
-	def test(self, examples=1000):
 
+	def train(self, until_cost=None, until_difference=None, until_iteration=None, status=True):
+
+		while True:
+			cost = self.J()
+
+			if status:
+				print "ITERATION #{} : {}".format(self.iteration, self.J())
+
+			if until_cost:
+				if cost <= until_cost:
+					break
+
+			if until_difference:
+				pass
+
+			if until_iteration:
+				if self.iteration > until_iteration:
+					break
+
+			self.iterate()
+
+
+	def test(self, examples=100, display=False):
+		# Set number of training sets to test
 		self.m_test = examples
+		# Images and labels from MNIST dataset put into X and Y variables
+		self.X_test, self.Y_test, self.label_test = get_data(TEST_IMAGES_FILE, TEST_LABELS_FILE, self.m_test)
 
-		self.X_test, self.Y_test = get_data(TEST_IMAGES_FILE, TEST_LABELS_FILE, self.m_test)
+		correct = 0
+		for i in range(self.m_test):
+			if np.argmax(self.h(~i)) == self.label_test[i]:
+				correct += 1
+
+		print " {}/{} ({}%) correct ".format(correct, self.m_test, 100.*correct/self.m_test)
 
 
 
@@ -96,7 +122,7 @@ class NeuralNetwork:
 		return self.activation_units(t)[3]
 
 
-	def activation_units(t):
+	def activation_units(self, t):
 		''' Return array of each layer's activation units for training set '''
 
 		# LAYER 1 (input layer)		
@@ -111,7 +137,7 @@ class NeuralNetwork:
 		# Sum up parameters with dot product
 		z = np.dot(self.T1, x)					
 		# Activation units for layer 2		
-		a2 = self.g(z)							
+		a2 = g(z)							
 		# Add bias units 					
 		a2 = np.insert(a2, 0, 1)			
 
@@ -119,14 +145,14 @@ class NeuralNetwork:
 		# Sum up parameters with dot product
 		z = np.dot(self.T2, a2)
 		# Activation units for layer 3 (output units)	
-		a3 = self.g(z)
+		a3 = g(z)
 
 		# Return all activation units
 		# None is added to make indices more logical
 		return (None, x, a2, a3)
 
 
-	def errors(t,a):
+	def errors(self, t, a):
 		''' Returns array of layer 2 and 3 errors for training set, t '''
 
 		# Layer 3 errors
@@ -139,7 +165,7 @@ class NeuralNetwork:
 		return (None, None, e2, e3)
 
 
-	def J():
+	def J(self):
 		''' Regularised cost function has two components:
 		1. the hypothesis cost
 		2. the parameter cost (for regularisation) '''
@@ -174,15 +200,13 @@ class NeuralNetwork:
 			for t in i[:-1]:
 				p_sum += t**2
 
-		return (h_sum/self.m) + l*p_sum/(2*self.m) 
+		return (h_sum/self.m) + self.l*p_sum/(2*self.m) 
 
 
-	def gradient_check(D, amount=5):
+	def gradient_check(self, D, gradients_amount=5):
 		''' Print approximated values for parameter derivatives of T2
 			and compare with calculated derivatives '''
 
-		# Amount of gradients to check
-		gradients_amount = amount
 
 		for i in range(gradients_amount):
 
@@ -190,8 +214,8 @@ class NeuralNetwork:
 			q = 0.00001
 
 			# Random indices
-			x = random.randint(0, s[2]-1)
-			y = random.randint(0, s[3]-1)
+			x = random.randint(0, self.s[2]-1)
+			y = random.randint(0, self.s[3]-1)
 
 			# Underestimate of cost function
 			self.T2[y][x] -= q
@@ -211,7 +235,7 @@ class NeuralNetwork:
 			print "Calculated gradient =\t", D[y][x], "\n"
 
 
-	def iterate(verbose=False):
+	def iterate(self, verbose=False):
 		''' Calculates activation units, errors for nodes,
 			Performs backpropagation to calculate parameter derivatives for one iteration
 			Returns array of parameter derivatives for the iteration '''
@@ -223,9 +247,9 @@ class NeuralNetwork:
 		# Loop through training sets
 		for t in range(self.m):
 
-			a = activation_units(t)
+			a = self.activation_units(t)
 
-			E = errors(t,a)
+			E = self.errors(t,a)
 
 			# atleast_2d enables arrays to tranpose and perform dot product
 			# E2 removes bias unit with slice
@@ -240,19 +264,17 @@ class NeuralNetwork:
 			d1 += np.dot(E2, a1)
 			d2 += np.dot(E3, a2)
 
-
-
 		# Uses matrix operations to exclude bias unit from being regularised
 		# Creates a matrix of ones corresponding to parameters
 		bias_unit_discriminator = np.ones_like(self.T1)
 		# Set parameters involving bias unit = 0
-		bias_unit_discriminator.T[-1] = np.zeros(s[2])
+		bias_unit_discriminator.T[-1] = np.zeros(self.s[2])
 		# Average derivatives and regularise
 		D1 = d1/self.m + self.l*self.T1*bias_unit_discriminator/(2*self.m)
 
 		# Ditto
 		bias_unit_discriminator = np.ones_like(self.T2)
-		bias_unit_discriminator.T[-1] = np.zeros(s[3])
+		bias_unit_discriminator.T[-1] = np.zeros(self.s[3])
 		D2 = d2/self.m + self.l*self.T2*bias_unit_discriminator/(2*self.m)
 
 
@@ -265,35 +287,40 @@ class NeuralNetwork:
 		return D2
 
 
-	def status(self, fancy=False):
-		''' Prints status of neural net such as cost and images correct 
-		Parameters:
-			percentage_correct: 
-			fancy: Whether to use fancy formatting for status
-		'''
+	def display_guess(self, grid=4):
+		''' Display the digit and neural network tries to guess it '''
 
-		if fancy:
-			print "-"*16
-			print "ITERATION #{}".format(self.iteration)
-			print "Cost: \t", J()
-			print "-"*16
+		# Initialise figure
+		fig = plt.figure()
 
-		if not fancy:
-			print "ITERATION #{} : {}".format(self.iteration,self.J())
+		# Creates array of random ints corresponding to training sets
+		examples = np.random.choice(self.m_test, grid**2, replace=False)
+
+		for i in range(0, grid**2):
+			# Add tile to grid
+			g = fig.add_subplot(grid, grid, i+1, frameon=True)
+			g.set_axis_off()
+
+			# Hypothesis for training set
+			h_i = np.argmax(self.h(~examples[i]))
+			# Add title of image label
+			g.set_title(h_i, style="italic", va="top")
+			# Reshape pixel array and show
+			img = plt.imshow(np.reshape(self.X_test[examples[i]], (28,28)))
+
+		plt.show()
 
 
-	'''def display_guess(t):
-		 Display the digit and neural network tries to guess it 
+	def save(self):
+		#dt = np.dtype([ ("LR", np.float64), ("RP", np.float64), ("T1", np.float64, self.T1.shape), ("T2", np.float64, self.T2.shape) ])
+		#array = np.array(
+		np.savez("NN", np.array([self.A,self.l]), self.T1, self.T2)
 
-		# Creates 2d array from pixels 
-		x2d = np.reshape(X_test[t], (28,28))
-
-		plt.matshow(x2d)
-		plt.suptitle(np.argmax(h(~t)))
-		plt.show()'''
 
 N = NeuralNetwork()
-N.train()
+
+
+
 
 
 '''
@@ -308,7 +335,6 @@ Problems:
 
 How it should work:
 
-Welcome to neural network blah blah
 
 N = NeuralNetwork()
 N.train( examples=5000, learning_rate=0.01, regularisation_param=0.5, until_cost=1.23, until_difference=0.001, until_iteration=1000 status="normal" )
