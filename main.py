@@ -1,18 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*- 
 
-import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
 import random
 from math import e, log
 
 
-LABELS_FILE = "/Users/cleye.jensen/Downloads/labels"
-IMAGES_FILE = "/Users/cleye.jensen/Downloads/images"
-TEST_IMAGES_FILE = "/Users/cleye.jensen/Downloads/test_images"
-TEST_LABELS_FILE = "/Users/cleye.jensen/Downloads/test_labels"
+LABELS_FILE = "labels"
+IMAGES_FILE = "images"
+TEST_IMAGES_FILE = "test_images"
+TEST_LABELS_FILE = "test_labels"
 
 
 g = lambda z: (1 / (1 + e**-z)) 
@@ -297,16 +295,18 @@ class NeuralNetwork:
 		examples = np.random.choice(self.m_test, grid**2, replace=False)
 
 		for i in range(0, grid**2):
+			# Hypothesis for training set
+			h_i = np.argmax(self.h(~examples[i]))
+			# Whether guess is correct
+			correct = (self.label_test[examples[i]] == h_i)
+
 			# Add tile to grid
 			g = fig.add_subplot(grid, grid, i+1, frameon=True)
 			g.set_axis_off()
-
-			# Hypothesis for training set
-			h_i = np.argmax(self.h(~examples[i]))
 			# Add title of image label
-			g.set_title(h_i, style="italic", va="top")
+			g.set_title(h_i)
 			# Reshape pixel array and show
-			img = plt.imshow(np.reshape(self.X_test[examples[i]], (28,28)))
+			img = plt.imshow(np.reshape(self.X_test[examples[i]], (28,28)), cmap=("Greens" if correct else "Reds"))
 
 		plt.show()
 
@@ -315,6 +315,9 @@ class NeuralNetwork:
 		#dt = np.dtype([ ("LR", np.float64), ("RP", np.float64), ("T1", np.float64, self.T1.shape), ("T2", np.float64, self.T2.shape) ])
 		#array = np.array(
 		np.savez("NN", np.array([self.A,self.l]), self.T1, self.T2)
+
+	def load(self):
+		params, _T1, _T2 = np.load("NN")
 
 
 N = NeuralNetwork()
@@ -333,18 +336,6 @@ Problems:
 	J() potential overflow error
 	store hypotheses in variable
 
-How it should work:
-
-
-N = NeuralNetwork()
-N.train( examples=5000, learning_rate=0.01, regularisation_param=0.5, until_cost=1.23, until_difference=0.001, until_iteration=1000 status="normal" )
-N.test( examples=1000,  )
-N.save()
-
-NeuralNetwork:
-	learning_rate:
-	regularisation_parameter:
-	train():
 
 
 '''
