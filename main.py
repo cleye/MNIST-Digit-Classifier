@@ -48,7 +48,7 @@ def get_data(images_file, labels_file, training_sets):
 
 class NeuralNetwork:
 
-	def __init__(self, examples=5000, learning_rate=0.2, regularisation_parameter=4):
+	def __init__(self, examples=5000, learning_rate=0.4, regularisation_parameter=2):
 
 		# Number of layers
 		self.L = 3
@@ -69,8 +69,8 @@ class NeuralNetwork:
 		self.iteration = 0
 
 		# Theta values initialised as random
-		self.T1 = np.random.random((self.s[2], self.s[1]+1)) * 0.2 - 0.1
-		self.T2 = np.random.random((self.s[3], self.s[2]+1)) * 2 - 1
+		self.T1 = np.random.random((self.s[2], self.s[1]+1)) * 2 - 1 #np.load("NN.npz").values()[0]
+		self.T2 = np.random.random((self.s[3], self.s[2]+1)) * 2 - 1 #np.load("NN.npz").values()[2] #
 
 		# Images and labels from MNIST dataset put into X and Y variables
 		self.X, self.Y, self.labels = get_data(IMAGES_FILE, LABELS_FILE, self.m)
@@ -320,7 +320,12 @@ class NeuralNetwork:
 		params, _T1, _T2 = np.load("NN")
 
 
-N = NeuralNetwork()
+if __name__ == '__main__':
+	N = NeuralNetwork()
+	N.train(until_iteration=100)
+	N.J()
+	N.test()
+	N.display_guess()
 
 
 
@@ -398,4 +403,3 @@ T2 - Parameters going from 25-unit Layer 2 to the 10-unit Layer 3  ( 10 x 26 arr
 
 
 '''
-
